@@ -1,5 +1,6 @@
 const light = vec3(0.5, 2.0, -1.0).normalize
 
+var boxPositions: uniform array[3, vec2]
 
 proc rotateX(angle: float): mat3 =
   var s = sin(angle)

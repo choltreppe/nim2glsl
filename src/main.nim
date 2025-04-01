@@ -23,7 +23,7 @@ func `[]`(node: PNode, i: HSlice[int, BackwardsIndex]): seq[PNode] {.inline.} =
   node.sons[i]
 
 template error(msg: string, info: TLineInfo) =
-  stderr.writeLine("$1($2, $3) Error: $4" % [inPath, $info.line, $info.col, msg])
+  stderr.writeLine("$1($2, $3) [nim2glsl] Error: $4" % [inPath, $info.line, $info.col, msg])
   quit 1
 
 template error(msg: string, node: PNode) = error(msg, node.info)
@@ -64,7 +64,7 @@ type
 
     of tArray:
       arrType: Type
-      arrSize: Natural
+      arrSize: string  # string because could be a const instead of lit
 
 func newVec(typ: BasicType, size: range[2..4]): Type =
   Type(kind: tVec, vecType: typ, vecSize: size)
@@ -117,11 +117,24 @@ proc parseType(node: PNode): Type =
   of nkIdent:
     let name = node.ident.s
     if name in typeLookup:
-      typeLookup[name]
+      return typeLookup[name]
     else:
       error &"unknown type `{name}`", node
 
-  else: error "invalid type-annotation", node
+  of nkBracketExpr:
+    if (
+      len(node) == 3 and
+      node[0].kind == nkIdent and
+      node[0].ident.s == "array"
+    ):
+      let typ = parseType(node[2])
+      case node[1].kind
+      of nkIdent:  return Type(kind: tArray, arrType: typ, arrSize: node[1].ident.s)
+      of nkIntLit: return Type(kind: tArray, arrType: typ, arrSize: $node[1].intVal)
+      else: discard
+
+  else: discard
+  error "invalid type-annotation", node
 
 proc swizzleString(node: PNode): Option[string] =
   if (
