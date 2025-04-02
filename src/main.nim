@@ -7,7 +7,7 @@
 #
 
 
-import "$nim"/compiler/[ast, parser, idents, options, lineinfos]
+import "$nim"/compiler/[ast, parser, idents, options, lineinfos, renderer]
 import std/[cmdline, sequtils, strutils, strformat, tables, options, sets, paths, parseopt]
 import fusion/matching
 
@@ -457,11 +457,26 @@ proc genToplevelDefs(node: PNode) =
           $typ
       addLine &"{returnType} {procName}(", node
       var ctx = ctx  # copy to add params to just local context
-      genDefs(node[3][1..^1], ctx, seperator = ", ")
-      outCode.setLen len(outCode)-2  # remove last comma
+      if len(node[3]) > 1:
+        genDefs(node[3][1..^1], ctx, seperator = ", ")
+        outCode.setLen len(outCode)-2  # remove last comma
       outCode &= ") {"
       genStmt(node[6], ctx)
       outCode &= '}'
+
+    of nkCommand:
+      addLine renderTree(node)&';', node
+
+    of nkPragma:
+      if (
+        len(node) != 1 or
+        node[0].kind != nkExprColonExpr or
+        len(node[0]) != 2 or
+        node[0][0].kind != nkIdent
+      ):
+        error "directive needs to be of the form `{.ident: expr.}`", node
+
+      addLine &"#{node[0][0].ident.s} {renderTree(node[0][1])}", node
 
     else:
       error "invalid top-level def", node
@@ -470,6 +485,8 @@ proc genToplevelDefs(node: PNode) =
 proc optError(s: string) =
   echo s
   quit 1
+
+var toStdout = false
 
 var p = initOptParser(commandLineParams())
 while true:
@@ -481,6 +498,9 @@ while true:
     p.kind == cmdLongOption and p.key == "outDir"
   ):
     outDir = Path(p.val)
+
+  elif p.kind == cmdLongOption and p.key == "stdout":
+    toStdout = true
 
   elif p.kind in {cmdShortOption, cmdLongOption}:
     optError &"unknown option `{p.key}`"
@@ -497,7 +517,13 @@ if inPath == "":
 if outDir == Path"":
   outDir = Path(inPath).parentDir
 
+elif toStdout:
+  optError "can't write to stdout and a file"
+
 let inFilename = Path(inPath).lastPathPart
 
 genToplevelDefs(parseString(readFile(inPath), newIdentCache(), newConfigRef(), inPath))
-writeFile(string(outDir/inFilename.changeFileExt("glsl")), outCode)
+if toStdout:
+  echo outCode
+else:
+  writeFile(string(outDir/inFilename.changeFileExt("glsl")), outCode)

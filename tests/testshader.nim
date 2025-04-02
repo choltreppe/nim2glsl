@@ -1,6 +1,13 @@
+{.version: 410.}
+precision highp float
+
+var
+  fragPosition: in vec2
+  finalColor: out vec4
+  resolution: uniform vec2
+
 const light = vec3(0.5, 2.0, -1.0).normalize
 
-var boxPositions: uniform array[3, vec2]
 
 proc rotateX(angle: float): mat3 =
   var s = sin(angle)
@@ -25,7 +32,7 @@ proc sdBox(p, b: vec3): float =
 proc map(p: vec3): float =
   var box = min(
     sdBox(p - vec3(0.0, 0.3, 0.0), vec3(0.45)),
-    sdBox(p - vec3(1.5+sin(iTime*3.0)*0.5, 0.3, 0.0), vec3(0.45))
+    sdBox(p - vec3(1.5+sin(1.0*3.0)*0.5, 0.3, 0.0), vec3(0.45))
   )
   var ground = opSmoothSubtraction(box, p.y, 0.4)
   return min(ground, box-0.06)
@@ -40,8 +47,8 @@ proc calcNormal(pos: vec3): vec3 =
     e.xxx*map( pos + e.xxx*eps )
   )
 
-proc mainImage(fragColor: out vec4, fragCoord: in vec2) =
-  var p: vec2 = (2.0*fragCoord-iResolution.xy)/iResolution.y
+proc main =
+  var p: vec2 = (2.0*fragPosition-resolution.xy)/resolution.y
     
   var r0 = rotateX(0.5) * normalize(vec3(p, 2.0))
   var r = vec3(2.0, 2.0, -4.0)
@@ -52,4 +59,4 @@ proc mainImage(fragColor: out vec4, fragCoord: in vec2) =
     r += r0*d
   if d < 0.01:
     var a = max(0.0, dot(light, calcNormal(r)))
-    fragColor = vec4(vec3(a), 1.0)
+    finalColor = vec4(vec3(a), 1.0)
