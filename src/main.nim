@@ -14,7 +14,6 @@ import fusion/matching
 
 var
   inPath: string
-  outDir: Path
   outCode = ""
   outCodeLines = 1'u16
 
@@ -482,11 +481,13 @@ proc genToplevelDefs(node: PNode) =
       error "invalid top-level def", node
 
 
+var 
+  outPath = ""
+  toStdout = false
+
 proc optError(s: string) =
   echo s
   quit 1
-
-var toStdout = false
 
 var p = initOptParser(commandLineParams())
 while true:
@@ -495,9 +496,9 @@ while true:
 
   if (
     p.kind == cmdShortOption and p.key == "o" or
-    p.kind == cmdLongOption and p.key == "outDir"
+    p.kind == cmdLongOption and p.key == "outPath"
   ):
-    outDir = Path(p.val)
+    outPath = p.val
 
   elif p.kind == cmdLongOption and p.key == "stdout":
     toStdout = true
@@ -514,8 +515,8 @@ while true:
 if inPath == "":
   optError "no file given"
 
-if outDir == Path"":
-  outDir = Path(inPath).parentDir
+if outPath == "":
+  outPath = $Path(inPath).changeFileExt("glsl")
 
 elif toStdout:
   optError "can't write to stdout and a file"
@@ -526,4 +527,4 @@ genToplevelDefs(parseString(readFile(inPath), newIdentCache(), newConfigRef(), i
 if toStdout:
   echo outCode
 else:
-  writeFile(string(outDir/inFilename.changeFileExt("glsl")), outCode)
+  writeFile(outPath, outCode)

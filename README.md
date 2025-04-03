@@ -19,9 +19,9 @@ to transpile a shader just do
 nim2glsl path/to/shader.nim
 ```
 
-to use a different output dir
+to use a different output path
 ```bash
-nim2glsl -o:output/path path/to/shader.nim
+nim2glsl -o:path/to/output.glsl path/to/shader.nim
 ```
 
 and to just print transpiled shader to `stdout`
