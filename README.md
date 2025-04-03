@@ -8,7 +8,7 @@ The type inference not realy type inference it is more like bestefford type-gues
 To make those openGL type-errors easier to locate `nim2glsl` does its best to put the generated code exactly in the same line as in the source.
 If the "type-guessing" cant guess the type or guesses it wrong, you can always annotate the type explicitly
 
-**Have a look at** `tests/testshader.nim` for an example of the syntax
+**Have a look at** [tests/testshader.nim](https://github.com/choltreppe/nim2glsl/blob/main/tests/testshader.nim) for an example of the syntax
 
 there are still alot of builtin functions (and types) missing. Mainly for texture stuff (because I dont need them yet), but they are easy to add, and atleast the missing functions arent a big problem because they just make the type-guessing fail. so you just need to annotate explicitly.
 
