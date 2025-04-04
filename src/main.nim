@@ -350,8 +350,7 @@ proc genDefs(
         genExpr(defs[^1])
       outCode &= seperator
 
-proc genStmt(node: PNode, ctx: Context) =
-  var ctx = ctx
+proc genStmt(node: PNode, ctx: var Context) =
 
   case node.kind
   of nkStmtList:
@@ -377,7 +376,7 @@ proc genStmt(node: PNode, ctx: Context) =
     outCode &= ';'
 
   of nkIfStmt:
-    proc genIfStmt(node: PNode, prefix = "") =
+    template genIfStmt(node: PNode, prefix = "") =  # its a template just to capture ctx
       addLine prefix&"if(", node
       genExpr(node[0])
       outCode &= ") {"
