@@ -380,6 +380,7 @@ proc genStmt(node: PNode, ctx: var Context) =
       addLine prefix&"if(", node
       genExpr(node[0])
       outCode &= ") {"
+      var ctx {.genSym.} = ctx
       genStmt(node[1], ctx)
       outCode &= "}"
     assert node[0].kind == nkElifBranch
@@ -390,13 +391,36 @@ proc genStmt(node: PNode, ctx: var Context) =
       else:
         assert node.kind == nkElse
         addLine "else {", node
+        var ctx = ctx
         genStmt(node[0], ctx)
         outCode &= '}'
+
+  of nkCaseStmt:
+    addLine "switch(", node
+    genExpr(node[0])
+    outCode &= ") {"
+    for node in node[1..^1]:
+      case node.kind
+      of nkOfBranch:
+        addLine "case ", node
+        genExpr(node[0])
+        outCode &= ':'
+        var ctx = ctx
+        genStmt(node[1], ctx)
+        outCode &= " break;"
+      of nkElse:
+        addLine "default:", node
+        var ctx = ctx
+        genStmt(node[0], ctx)
+      else:
+        error "no elif-braches supported in case-statement", node
+    outCode &= '}'
 
   of nkWhileStmt:
     addLine "while(", node
     genExpr(node[0])
     outCode &= ") {"
+    var ctx = ctx
     genStmt(node[1], ctx)
     outCode &= "}"
 
