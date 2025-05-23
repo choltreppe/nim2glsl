@@ -498,7 +498,11 @@ proc genToplevelDefs(node: PNode) =
       ):
         error "directive needs to be of the form `{.ident: expr.}`", node
 
-      addLine &"#{node[0][0].ident.s} {renderTree(node[0][1])}", node
+      block:
+        let body =
+          if node[0][1].kind == nkStrLit: node[0][1].strVal
+          else: renderTree(node[0][1])
+        addLine &"#{node[0][0].ident.s} {body}", node
 
     else:
       error "invalid top-level def", node

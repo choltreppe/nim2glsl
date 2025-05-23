@@ -1,3 +1,5 @@
+{.version: "320 es".}
+
 const
   x = 1
   y = 5
