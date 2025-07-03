@@ -4,7 +4,11 @@ const
   x = 1
   y = 5
 
+var texture0: uniform sampler2D
+
 proc main =
+
+  var texel = texture(texture0, vec2(0.5))
   
   var i = 0
   while i < 10:

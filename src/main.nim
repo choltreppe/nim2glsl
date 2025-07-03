@@ -47,7 +47,7 @@ proc addLine(s: string, fromNode: PNode) =
 type
   BasicType = enum tFloat="float", tInt="int", tBool="bool"
 
-  TypeKind = enum tBasic, tVec, tMat, tArray
+  TypeKind = enum tBasic, tVec, tMat, tArray, tSampler
 
   Type = ref object
     case kind: TypeKind
@@ -64,6 +64,9 @@ type
     of tArray:
       arrType: Type
       arrSize: string  # string because could be a const instead of lit
+
+    of tSampler:
+      texDim: int
 
 func newVec(typ: BasicType, size: range[2..4]): Type =
   Type(kind: tVec, vecType: typ, vecSize: size)
@@ -89,6 +92,9 @@ func `$`(typ: Type): string =
   of tArray:
     &"{typ.arrType}[{typ.arrSize}]"
 
+  of tSampler:
+    &"sampler{typ.texDim}D"
+
 proc `==`(a,b: Type): bool =
   if a.kind != b.kind: false
   else:
@@ -97,6 +103,7 @@ proc `==`(a,b: Type): bool =
     of tVec: a.vecSize == b.vecSize and a.vecType == b.vecType
     of tMat: a.matSize == b.matSize and a.matType == b.matType
     of tArray: a.arrSize == b.arrSize and a.arrType == b.arrType
+    of tSampler: a.texDim == b.texDim
 
 var typeLookup: Table[string, Type]
 for typ in BasicType:
@@ -109,6 +116,9 @@ for typ in BasicType:
         matSize: (size, sizeY))
       typeLookup[$typ] = typ
     let typ = newVec(typ, size)
+    typeLookup[$typ] = typ
+  for dim in 2..3:
+    let typ = Type(kind: tSampler, texDim: dim)
     typeLookup[$typ] = typ
 
 proc parseType(node: PNode): Type =
@@ -171,6 +181,9 @@ proc getReturnType(name, firstArg: PNode, ctx: Context): Option[Type] =
     of "dot":
       if argType.kind == tVec:
         return some(argType.vecType.toType)
+
+    of "texture":
+      return some(newVec(tFloat, 4))
 
     else: discard
 
